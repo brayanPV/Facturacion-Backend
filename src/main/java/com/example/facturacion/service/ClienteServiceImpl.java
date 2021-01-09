@@ -22,7 +22,6 @@ public class ClienteServiceImpl implements ClienteService{
 	}
 
 	@Override
-	@Transactional(readOnly = true)
 	public Cliente save(Cliente cliente) {
 		return clienteDao.save(cliente);
 	}

@@ -11,6 +11,7 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
+import javax.persistence.PrePersist;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
@@ -27,44 +28,42 @@ import org.springframework.format.annotation.DateTimeFormat;
 @Entity
 @Table(name="cliente") //para indicar el nombre
 public class Cliente implements Serializable{
-    @Id
+    
+	private static final long serialVersionUID = 1L;
+
+	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @NotEmpty
+    @Column(nullable = false)
     private String nombre;
+    
     @NotEmpty
     private String apellido;
+    
     @NotEmpty
     @Email
+    @Column(unique = true)
     private String email;
     
     @Column(name="create_at")
     @Temporal(TemporalType.DATE)
     @DateTimeFormat(pattern = "yyyy-MM-dd")
-    @NotNull
     private Date createAt;
-    private static final long serialVersionUID = 1L;
     
     @OneToMany(mappedBy = "cliente",fetch = FetchType.LAZY, cascade=CascadeType.ALL)
     @JsonIgnore
     private List<Factura> facturas;
 
     private String foto;
-   /* @PrePersist
+    
+    @PrePersist
     public void PrePersist(){
         createAt = new Date();
-    }*/
+    }
     public Cliente(){
         this.facturas = new ArrayList<Factura>();
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public String getNombre() {
@@ -98,10 +97,6 @@ public class Cliente implements Serializable{
     public void setCreateAt(Date createAt) {
         this.createAt = createAt;
     }
-
-    public static long getSerialversionuid() {
-        return serialVersionUID;
-    }
     
     public String getFoto(){
         return this.foto;
@@ -127,6 +122,12 @@ public class Cliente implements Serializable{
     public String toString() {
         return nombre + " " +apellido;
     }
+	public Long getId() {
+		return id;
+	}
+	public void setId(Long id) {
+		this.id = id;
+	}
 
     
 }
