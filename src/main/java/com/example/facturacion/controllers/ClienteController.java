@@ -12,6 +12,8 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,24 +27,23 @@ import com.example.facturacion.service.ClienteService;
 
 @RestController
 @RequestMapping("/clientes")
+@CrossOrigin(origins = { "http://localhost:4200" })
 public class ClienteController {
 
 	@Autowired
 	private ClienteService clienteImpl;
-	
-	private static final Logger log =  LoggerFactory.getLogger(ClienteController.class);
-	
+
 	@GetMapping("/")
 	public List<Cliente> index() {
 		return clienteImpl.findAll();
 	}
-	
+
 	@GetMapping("/{id}")
-	public ResponseEntity<?> ver(@PathVariable Long id){
+	public ResponseEntity<?> ver(@PathVariable Long id) {
 		Cliente cliente = null;
 		Map<String, Object> response = new HashMap<>();
 		try {
-			cliente = clienteImpl.findById(id);
+			cliente = clienteImpl.fetchByIdWithFacturas(id);
 		} catch (DataAccessException e) {
 			response.put("mensaje", "Error al realizar la consulta en la base de datos");
 			response.put("error", "Error al realizar la consulta en la base de datos" + e.getMessage());
@@ -55,22 +56,22 @@ public class ClienteController {
 		}
 		return new ResponseEntity<Cliente>(cliente, HttpStatus.OK);
 	}
-	
+
 	@PostMapping("/")
-	public ResponseEntity<?> create(@Valid @RequestBody Cliente cliente, BindingResult result){
+	public ResponseEntity<?> create(@Valid @RequestBody Cliente cliente, BindingResult result) {
 		Cliente clienteN = null;
 		Map<String, Object> response = new HashMap<>();
-		if(result.hasErrors()) {
+		if (result.hasErrors()) {
 			List<String> errors = result.getFieldErrors().stream()
 					.map(err -> "El campo: '" + err.getField() + "' " + err.getDefaultMessage())
 					.collect(Collectors.toList());
 			response.put("error", errors);
 			return new ResponseEntity<Map<String, Object>>(response, HttpStatus.BAD_REQUEST);
 		}
-		
+
 		try {
 			clienteN = clienteImpl.save(cliente);
-		}catch(DataAccessException e) {
+		} catch (DataAccessException e) {
 			response.put("mensaje", "Error al crear el cliente en la base de datos");
 			response.put("error", "Error al crear el cliente en la base de datos " + e.getMessage());
 			return new ResponseEntity<Map<String, Object>>(response, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -78,9 +79,9 @@ public class ClienteController {
 		response.put("mensaje", "El cliente ha sido creado con exito");
 		response.put("cliente", clienteN);
 		return new ResponseEntity<Map<String, Object>>(response, HttpStatus.CREATED);
-		
+
 	}
-	
+
 	@PutMapping("{id}")
 	public ResponseEntity<?> update(@Valid @RequestBody Cliente cliente, BindingResult result, @PathVariable Long id) {
 
@@ -115,5 +116,32 @@ public class ClienteController {
 		response.put("cliente", clienteUpdate);
 		return new ResponseEntity<Map<String, Object>>(response, HttpStatus.CREATED);
 	}
-	
+
+	@DeleteMapping("{id}")
+	public ResponseEntity<?> delete(@PathVariable Long id) {
+		Map<String, Object> response = new HashMap<>();
+		try {
+			clienteImpl.delete(id);
+		} catch (DataAccessException e) {
+			response.put("mensaje", "Error al eliminar el cliente en la base de datos");
+			response.put("error", "Error al eliminar el cliente en la base de datos" + e.getMessage());
+			return new ResponseEntity<Map<String, Object>>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		response.put("mensaje", "El cliente ha sido eliminado con exito");
+		return new ResponseEntity<Map<String, Object>>(response, HttpStatus.CREATED);
+	}
+
+	/*@RequestMapping(value = "/ver/{id}")
+    public String ver(@PathVariable(value = "id") Long id, Map<String, Object> model, RedirectAttributes flash) {
+        //Cliente cliente = clienteService.findOne(id);
+        Cliente cliente = clienteService.fetchByIdWithFacturas(id);
+        if (cliente == null) {
+            flash.addFlashAttribute("error", "El cliente no existe en la base de datos");
+            return "redirect:/listar";
+        }
+        model.put("cliente", cliente);
+        model.put("titulo", "Detalle del cliente: " + cliente.getNombre());
+        return "ver";
+    }*/
+
 }
